@@ -17,8 +17,8 @@ import os
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
-from langchain_aws import BedrockLLM
-from langchain_community.embeddings import BedrockEmbeddings
+from langchain_aws import ChatBedrock
+from langchain_aws import BedrockEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import LLMChain
@@ -31,7 +31,7 @@ import operator
 load_dotenv()
 
 # AWS Bedrock setup
-llm = BedrockLLM(
+llm = ChatBedrock(
     model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
     region_name="us-east-1",
     max_tokens=4096,

@@ -1,12 +1,12 @@
 # Multi-Agent Task Breakdown with LangChain/LangGraph
 
-A comprehensive system for breaking down complex tasks into subtasks and executing them using different coordination patterns with AWS Bedrock integration.
+A comprehensive system for breaking down complex tasks into subtasks and executing them using different coordination patterns with AWS Bedrock integration and advanced memory management.
 
 ## Features
 
 - **4 Different Coordination Patterns**: From unreliable parallel execution to reliable sequential with compression
+- **Advanced Memory Management**: Episodic and semantic memory with hot/background processing
 - **AWS Bedrock Integration**: Uses Claude Sonnet 3.5 and Titan embeddings
-- **Memory Management**: Short-term conversation memory and long-term vector storage
 - **LangGraph Workflows**: Visual workflow representation with state management
 - **Production Ready**: Error handling, monitoring hooks, and scalable architecture
 
@@ -15,7 +15,7 @@ A comprehensive system for breaking down complex tasks into subtasks and executi
 ### Tech Stack
 - **LLM**: AWS Bedrock Claude Sonnet 3.5
 - **Framework**: LangChain + LangGraph
-- **Memory**: Short-term (conversation) + Long-term (vector store)
+- **Memory**: Advanced episodic and semantic memory system
 - **State Management**: LangGraph state management
 - **Orchestration**: LangGraph workflow graphs
 
@@ -25,6 +25,20 @@ A comprehensive system for breaking down complex tasks into subtasks and executi
 2. **Parallel with Shared Context**: Shared memory, minimal coordination
 3. **Sequential Agents (Reliable)**: Full coordination, deterministic execution
 4. **Sequential with Compression**: Scalable with memory optimization
+
+### Enhanced Memory System
+
+The system implements an advanced memory architecture based on the CoALA (Cognitive Architecture for Language Agents) framework:
+
+#### Episodic Memory
+- **Purpose**: Stores specific experiences and interactions
+- **Features**: Real-time hot updates, temporal search, contextual retrieval
+- **Benefits**: Preserves detailed task execution history
+
+#### Semantic Memory
+- **Purpose**: Stores abstract knowledge and patterns
+- **Features**: Background consolidation, pattern recognition, knowledge graphs
+- **Benefits**: Builds understanding across multiple task executions
 
 ## Installation
 
@@ -52,19 +66,6 @@ AWS_DEFAULT_REGION=us-east-1
 ```
 
 ## Usage
-
-### Command Line Interface
-
-```bash
-# Basic usage with default pattern (sequential_reliable)
-python main.py "Create a marketing strategy for a mobile app"
-
-# Use specific pattern
-python main.py "Design a website" --pattern sequential_compressed
-
-# Verbose output with pattern info
-python main.py "Plan a project" --pattern parallel_shared --verbose --show-info
-```
 
 ### Python API
 
@@ -105,7 +106,7 @@ python examples/pattern4_sequential_compressed.py    # Shows memory optimization
 # Compare all patterns side by side
 python examples/compare_all_patterns.py              # Comprehensive comparison
 
-# Legacy examples (still available)
+# Additional examples
 python examples/basic_usage.py                       # Basic usage with the unified API
 python examples/with_memory_persistence.py           # Memory persistence example
 ```
@@ -118,18 +119,34 @@ python examples/with_memory_persistence.py           # Memory persistence exampl
 | Parallel Shared | Shared | Minimal | Low | Simple parallel tasks |
 | Sequential Reliable | Cumulative | Full | High | Most applications |
 | Sequential Compressed | Optimized | Full | High | Long tasks, production |
+| **Enhanced Patterns** | **Episodic + Semantic** | **Full + Memory** | **High** | **Production + Knowledge** |
 
 ## Memory Management
 
-### Short-term Memory
-- Conversation buffer for immediate context
-- Shared across agents in sequential patterns
-- Isolated per agent in parallel patterns
+### Enhanced Memory Architecture
 
-### Long-term Memory
-- Vector store with FAISS for semantic search
-- Persistent storage with ChromaDB
-- Automatic compression and retrieval
+#### Episodic Memory
+- **Real-time Updates**: Hot processing during task execution
+- **Temporal Search**: Find relevant experiences by time and context
+- **Metadata Storage**: Rich context with timestamps and relationships
+- **Retrieval**: Semantic similarity search with temporal filtering
+
+#### Semantic Memory
+- **Background Processing**: Consolidation of knowledge patterns
+- **Pattern Recognition**: Automatic identification of recurring themes
+- **Knowledge Graphs**: Hierarchical organization of abstract concepts
+- **Cross-Task Learning**: Knowledge transfer between different task types
+
+#### Memory Operations
+- **Hot Updates**: Immediate episodic memory updates during execution
+- **Background Consolidation**: Asynchronous semantic memory processing
+- **Intelligent Retrieval**: Multi-source context retrieval (episodic + semantic + compressed)
+- **Compression Integration**: Memory-driven context compression
+
+### Traditional Memory (Legacy Patterns)
+- **Short-term**: Conversation buffer for immediate context
+- **Long-term**: Vector store with FAISS for semantic search
+- **Persistence**: ChromaDB for cross-session memory
 
 ## Development
 
@@ -149,6 +166,11 @@ src/multi_agent_task_breakdown/
 │   ├── parallel_shared.py
 │   ├── sequential_reliable.py
 │   └── sequential_compressed.py
+├── memory/
+│   ├── __init__.py         # Memory system exports
+│   ├── episodic.py         # Episodic memory implementation
+│   ├── semantic.py         # Semantic memory implementation
+│   └── manager.py          # Advanced memory manager
 └── cli.py                  # Command-line interface
 ```
 
@@ -162,9 +184,6 @@ src/multi_agent_task_breakdown/
 ### Testing
 
 ```bash
-# Run tests (when implemented)
-uv run pytest
-
 # Code formatting
 uv run black src/
 uv run isort src/
@@ -176,11 +195,18 @@ uv run mypy src/
 ## Production Deployment
 
 ### Recommended Pattern
-Use **Pattern 3 (Sequential Reliable)** for most applications, upgrading to **Pattern 4 (Sequential Compressed)** when dealing with:
+Use **Pattern 3 Enhanced (Sequential Reliable with Advanced Memory)** for most applications, upgrading to **Pattern 4 Enhanced (Sequential Compressed with Advanced Memory)** when dealing with:
 - Long-running tasks (>10 steps)
 - Complex multi-turn conversations
 - Memory-intensive workflows
 - Production deployments requiring cost optimization
+- Applications requiring knowledge retention and pattern recognition
+
+### Enhanced Pattern Benefits
+- **Context Retention**: Episodic memory preserves specific experiences
+- **Knowledge Consolidation**: Semantic memory builds abstract understanding
+- **Efficiency**: Intelligent compression reduces token usage
+- **Scalability**: Background processing handles memory management overhead
 
 ### Environment Variables
 ```env
@@ -197,6 +223,7 @@ The system includes hooks for:
 - Memory usage monitoring
 - Error recovery mechanisms
 - Cost optimization
+- Memory performance metrics
 
 ## License
 
