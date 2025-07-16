@@ -6,7 +6,7 @@
 
 - **LLM**: AWS Bedrock Claude Sonnet 3.5
 - **Framework**: LangChain + LangGraph
-- **Memory**: Short-term (conversation) + Long-term (vector store)
+- **Memory**: Advanced episodic and semantic memory system
 - **State Management**: LangGraph state management
 - **Orchestration**: LangGraph workflow graphs
 
@@ -35,7 +35,7 @@ embeddings = BedrockEmbeddings(
     region_name="us-east-1"
 )
 
-# Memory systems
+# Advanced memory systems
 short_term_memory = ConversationBufferMemory(
     memory_key="chat_history",
     return_messages=True
@@ -60,6 +60,60 @@ class AgentState(TypedDict):
     context: str
     compressed_context: str
     step: str
+    # Enhanced memory fields
+    episodic_memory: list[dict]
+    semantic_memory: dict
+    memory_metadata: dict
+```
+
+### Enhanced Memory Management
+
+The system implements an advanced memory architecture based on the CoALA (Cognitive Architecture for Language Agents) framework:
+
+#### Episodic Memory
+- **Purpose**: Stores specific experiences and interactions
+- **Structure**: List of memory episodes with timestamps and metadata
+- **Retrieval**: Temporal and contextual search
+- **Updates**: Real-time hot updates during execution
+
+#### Semantic Memory
+- **Purpose**: Stores abstract knowledge and patterns
+- **Structure**: Hierarchical knowledge graph with embeddings
+- **Retrieval**: Semantic similarity search
+- **Updates**: Background processing for knowledge consolidation
+
+#### Memory Operations
+
+```python
+class AdvancedMemoryManager:
+    def __init__(self, embeddings, vector_store):
+        self.embeddings = embeddings
+        self.vector_store = vector_store
+        self.episodic_memory = []
+        self.semantic_memory = {}
+        
+    def add_episode(self, episode_data: dict):
+        """Add new episode to episodic memory with hot processing"""
+        episode = {
+            "id": len(self.episodic_memory),
+            "timestamp": time.time(),
+            "data": episode_data,
+            "embeddings": self.embeddings.embed_query(str(episode_data))
+        }
+        self.episodic_memory.append(episode)
+        
+    def retrieve_relevant_episodes(self, query: str, k: int = 5) -> list:
+        """Retrieve relevant episodes using semantic search"""
+        query_embedding = self.embeddings.embed_query(query)
+        # Implement similarity search
+        return relevant_episodes
+        
+    def update_semantic_memory(self, knowledge: dict):
+        """Background processing for semantic memory updates"""
+        # Consolidate knowledge patterns
+        # Update semantic embeddings
+        # Trigger background processing
+        pass
 ```
 
 -----
@@ -181,46 +235,65 @@ def shared_agent_node(state: AgentState, agent_id: str, shared_memory) -> AgentS
 
 -----
 
-## Pattern 3: Sequential Agents (Simple & Reliable)
+## Pattern 3: Sequential Agents (Reliable) - Enhanced
 
 ### Specification
 
-- **Graph Type**: Linear sequential execution
-- **Memory**: Cumulative context building
+- **Graph Type**: Linear sequential execution with advanced memory
+- **Memory**: Episodic and semantic memory with hot/background processing
 - **Coordination**: Full - each agent builds on previous work
 - **Reliability**: High - deterministic execution order
+- **Memory Features**: Real-time episodic updates, semantic knowledge consolidation
 
 ### LangGraph Implementation
 
 ```python
-def create_sequential_reliable_graph():
+def create_sequential_reliable_enhanced_graph():
     workflow = StateGraph(AgentState)
     
-    # Sequential nodes
+    # Enhanced sequential nodes with memory management
     workflow.add_node("task_breaker", break_task_node)
-    workflow.add_node("agent_1", lambda state: sequential_agent_node(state, "1"))
-    workflow.add_node("agent_2", lambda state: sequential_agent_node(state, "2"))
-    workflow.add_node("merger", merge_sequential_node)
+    workflow.add_node("memory_initializer", initialize_memory_node)
+    workflow.add_node("agent_1", lambda state: enhanced_sequential_agent_node(state, "1"))
+    workflow.add_node("agent_2", lambda state: enhanced_sequential_agent_node(state, "2"))
+    workflow.add_node("memory_consolidator", consolidate_memory_node)
+    workflow.add_node("merger", merge_enhanced_node)
     
-    # Linear execution path
+    # Linear execution with memory management
     workflow.set_entry_point("task_breaker")
-    workflow.add_edge("task_breaker", "agent_1")
+    workflow.add_edge("task_breaker", "memory_initializer")
+    workflow.add_edge("memory_initializer", "agent_1")
     workflow.add_edge("agent_1", "agent_2")
-    workflow.add_edge("agent_2", "merger")
+    workflow.add_edge("agent_2", "memory_consolidator")
+    workflow.add_edge("memory_consolidator", "merger")
     workflow.add_edge("merger", END)
     
     return workflow.compile()
 
-def sequential_agent_node(state: AgentState, agent_id: str) -> AgentState:
-    # Each agent gets FULL context of previous work
-    context_chain = LLMChain(
+def enhanced_sequential_agent_node(state: AgentState, agent_id: str) -> AgentState:
+    # Retrieve relevant episodic and semantic memories
+    relevant_episodes = memory_manager.retrieve_relevant_episodes(
+        state["subtasks"][int(agent_id)-1]
+    )
+    
+    semantic_context = memory_manager.get_semantic_context(
+        state["subtasks"][int(agent_id)-1]
+    )
+    
+    # Build comprehensive context
+    context = f"""
+    Previous work: {state.get("context", "")}
+    Relevant episodes: {format_episodes(relevant_episodes)}
+    Semantic knowledge: {semantic_context}
+    """
+    
+    agent_chain = LLMChain(
         llm=llm,
-        memory=short_term_memory,
         prompt=PromptTemplate(
             template="""
             You are Sub-agent {agent_id}.
             
-            Previous context: {context}
+            Context: {context}
             Current task: {task}
             
             Build upon previous work and complete your task.
@@ -229,65 +302,94 @@ def sequential_agent_node(state: AgentState, agent_id: str) -> AgentState:
         )
     )
     
-    result = context_chain.run(
+    result = agent_chain.run(
         agent_id=agent_id,
-        context=state.get("context", ""),
+        context=context,
         task=state["subtasks"][int(agent_id)-1]
     )
     
-    # Update state with cumulative context
+    # Hot update episodic memory
+    episode_data = {
+        "agent_id": agent_id,
+        "task": state["subtasks"][int(agent_id)-1],
+        "result": result,
+        "context": context
+    }
+    memory_manager.add_episode(episode_data)
+    
+    # Update state
     state["sub_results"][agent_id] = result
     state["context"] += f"\n[Agent {agent_id}]: {result}"
+    
+    return state
+
+def consolidate_memory_node(state: AgentState) -> AgentState:
+    """Background processing for semantic memory consolidation"""
+    # Analyze episodic memories for patterns
+    patterns = analyze_episodic_patterns(state["episodic_memory"])
+    
+    # Update semantic memory with new knowledge
+    memory_manager.update_semantic_memory(patterns)
     
     return state
 ```
 
 ### Memory Strategy
 
-- **Short-term**: Cumulative `ConversationBufferMemory`
-- **Long-term**: Vector store with embeddings of completed tasks
-- **Sharing**: Full context propagation through state
+- **Episodic Memory**: Real-time hot updates during execution
+- **Semantic Memory**: Background consolidation of knowledge patterns
+- **Retrieval**: Advanced semantic search with temporal context
+- **Sharing**: Full context propagation with memory optimization
 
 -----
 
-## Pattern 4: Sequential with Compression (Scalable)
+## Pattern 4: Sequential with Compression (Scalable) - Enhanced
 
 ### Specification
 
-- **Graph Type**: Sequential with compression nodes
-- **Memory**: Compressed context + vector retrieval
-- **Coordination**: Full coordination with memory management
-- **Scalability**: High - handles long tasks via compression
+- **Graph Type**: Sequential with compression and advanced memory
+- **Memory**: Compressed context + episodic/semantic memory
+- **Coordination**: Full coordination with intelligent memory management
+- **Scalability**: High - handles long tasks via compression and memory optimization
+- **Memory Features**: Intelligent compression, background processing, semantic retrieval
 
 ### LangGraph Implementation
 
 ```python
-def create_sequential_compressed_graph():
+def create_sequential_compressed_enhanced_graph():
     workflow = StateGraph(AgentState)
     
-    # Compression-aware nodes
+    # Enhanced compression-aware nodes
     workflow.add_node("task_breaker", break_task_node)
-    workflow.add_node("compress_1", compress_context_node)
-    workflow.add_node("agent_1", lambda state: compressed_agent_node(state, "1"))
-    workflow.add_node("compress_2", compress_context_node)
-    workflow.add_node("agent_2", lambda state: compressed_agent_node(state, "2"))
-    workflow.add_node("compress_final", compress_context_node)
-    workflow.add_node("merger", merge_compressed_node)
+    workflow.add_node("memory_initializer", initialize_memory_node)
+    workflow.add_node("compress_1", enhanced_compress_context_node)
+    workflow.add_node("agent_1", lambda state: enhanced_compressed_agent_node(state, "1"))
+    workflow.add_node("compress_2", enhanced_compress_context_node)
+    workflow.add_node("agent_2", lambda state: enhanced_compressed_agent_node(state, "2"))
+    workflow.add_node("compress_final", enhanced_compress_context_node)
+    workflow.add_node("memory_consolidator", consolidate_memory_node)
+    workflow.add_node("merger", merge_enhanced_compressed_node)
     
-    # Sequential with compression steps
+    # Sequential with enhanced compression and memory
     workflow.set_entry_point("task_breaker")
-    workflow.add_edge("task_breaker", "compress_1")
+    workflow.add_edge("task_breaker", "memory_initializer")
+    workflow.add_edge("memory_initializer", "compress_1")
     workflow.add_edge("compress_1", "agent_1")
     workflow.add_edge("agent_1", "compress_2")
     workflow.add_edge("compress_2", "agent_2")
     workflow.add_edge("agent_2", "compress_final")
-    workflow.add_edge("compress_final", "merger")
+    workflow.add_edge("compress_final", "memory_consolidator")
+    workflow.add_edge("memory_consolidator", "merger")
     workflow.add_edge("merger", END)
     
     return workflow.compile()
 
-def compress_context_node(state: AgentState) -> AgentState:
-    # Use Claude Sonnet for compression
+def enhanced_compress_context_node(state: AgentState) -> AgentState:
+    # Intelligent compression using episodic memory insights
+    relevant_episodes = memory_manager.retrieve_relevant_episodes(
+        state["context"], k=3
+    )
+    
     compression_chain = LLMChain(
         llm=llm,
         prompt=PromptTemplate(
@@ -295,30 +397,49 @@ def compress_context_node(state: AgentState) -> AgentState:
             Compress the following context into key insights (<200 words):
             
             Context: {context}
+            Relevant episodes: {episodes}
             
-            Preserve: Task goals, completed work, key decisions
-            Remove: Verbose explanations, redundant information
+            Preserve: Task goals, completed work, key decisions, critical insights
+            Remove: Verbose explanations, redundant information, low-priority details
+            Focus on: Patterns, learnings, and actionable insights
             """,
-            input_variables=["context"]
+            input_variables=["context", "episodes"]
         )
     )
     
-    compressed = compression_chain.run(context=state["context"])
+    compressed = compression_chain.run(
+        context=state["context"],
+        episodes=format_episodes(relevant_episodes)
+    )
     state["compressed_context"] = compressed
     
-    # Store in long-term memory
-    long_term_memory.save_context(
-        inputs={"context": state["context"]},
-        outputs={"compressed": compressed}
-    )
+    # Store in episodic memory for future reference
+    episode_data = {
+        "type": "compression",
+        "original_context": state["context"],
+        "compressed_context": compressed,
+        "timestamp": time.time()
+    }
+    memory_manager.add_episode(episode_data)
     
     return state
 
-def compressed_agent_node(state: AgentState, agent_id: str) -> AgentState:
-    # Retrieve relevant context from long-term memory
-    relevant_context = long_term_memory.load_memory_variables({
-        "query": state["subtasks"][int(agent_id)-1]
-    })["relevant_context"]
+def enhanced_compressed_agent_node(state: AgentState, agent_id: str) -> AgentState:
+    # Multi-source context retrieval
+    relevant_episodes = memory_manager.retrieve_relevant_episodes(
+        state["subtasks"][int(agent_id)-1], k=5
+    )
+    
+    semantic_context = memory_manager.get_semantic_context(
+        state["subtasks"][int(agent_id)-1]
+    )
+    
+    # Build optimized context
+    context = f"""
+    Compressed context: {state["compressed_context"]}
+    Relevant episodes: {format_episodes(relevant_episodes)}
+    Semantic knowledge: {semantic_context}
+    """
     
     agent_chain = LLMChain(
         llm=llm,
@@ -326,22 +447,30 @@ def compressed_agent_node(state: AgentState, agent_id: str) -> AgentState:
             template="""
             You are Sub-agent {agent_id}.
             
-            Compressed context: {compressed_context}
-            Relevant history: {relevant_context}
+            Context: {context}
             Current task: {task}
             
-            Complete your task efficiently.
+            Complete your task efficiently using the provided context.
             """,
-            input_variables=["agent_id", "compressed_context", "relevant_context", "task"]
+            input_variables=["agent_id", "context", "task"]
         )
     )
     
     result = agent_chain.run(
         agent_id=agent_id,
-        compressed_context=state["compressed_context"],
-        relevant_context=relevant_context,
+        context=context,
         task=state["subtasks"][int(agent_id)-1]
     )
+    
+    # Hot update episodic memory
+    episode_data = {
+        "agent_id": agent_id,
+        "task": state["subtasks"][int(agent_id)-1],
+        "result": result,
+        "compressed_context": state["compressed_context"],
+        "timestamp": time.time()
+    }
+    memory_manager.add_episode(episode_data)
     
     state["sub_results"][agent_id] = result
     return state
@@ -349,9 +478,11 @@ def compressed_agent_node(state: AgentState, agent_id: str) -> AgentState:
 
 ### Memory Strategy
 
-- **Short-term**: Compressed context summaries
-- **Long-term**: Vector store with FAISS + semantic search
-- **Sharing**: Compressed context + retrieved relevant history
+- **Episodic Memory**: Hot updates with compression metadata
+- **Semantic Memory**: Background pattern recognition and knowledge consolidation
+- **Compression**: Intelligent context compression using memory insights
+- **Retrieval**: Multi-source context retrieval (compressed + episodic + semantic)
+- **Sharing**: Optimized context sharing with memory-driven compression
 
 -----
 
@@ -360,10 +491,10 @@ def compressed_agent_node(state: AgentState, agent_id: str) -> AgentState:
 ### Basic Execution
 
 ```python
-# Initialize graph
-graph = create_sequential_reliable_graph()
+# Initialize enhanced graph
+graph = create_sequential_reliable_enhanced_graph()
 
-# Execute task
+# Execute task with advanced memory
 initial_state = AgentState(
     messages=[],
     task="Create a mobile game outline",
@@ -372,7 +503,10 @@ initial_state = AgentState(
     final_result="",
     context="",
     compressed_context="",
-    step="start"
+    step="start",
+    episodic_memory=[],
+    semantic_memory={},
+    memory_metadata={}
 )
 
 result = graph.invoke(initial_state)
@@ -382,7 +516,7 @@ print(result["final_result"])
 ### With Memory Persistence
 
 ```python
-# Setup persistent memory
+# Setup persistent memory with advanced features
 from langchain.vectorstores import Chroma
 
 persistent_store = Chroma(
@@ -390,33 +524,35 @@ persistent_store = Chroma(
     embedding_function=embeddings
 )
 
-# Configure long-term memory
-long_term_memory = VectorStoreRetrieverMemory(
-    retriever=persistent_store.as_retriever(),
-    memory_key="historical_context"
-)
+# Configure advanced memory manager
+memory_manager = AdvancedMemoryManager(embeddings, persistent_store)
 
-# Run with memory
-graph = create_sequential_compressed_graph()
+# Run with enhanced memory
+graph = create_sequential_compressed_enhanced_graph()
 result = graph.invoke(initial_state)
 ```
 
 ## Key Advantages
 
-1. **LangGraph Benefits**:
+1. **Advanced Memory Management**:
+- Episodic memory for specific experiences
+- Semantic memory for abstract knowledge
+- Hot updates during execution
+- Background processing for consolidation
+- Intelligent compression using memory insights
+
+2. **LangGraph Benefits**:
 - Visual workflow representation
 - Built-in state management
 - Conditional routing
 - Error handling and retries
-1. **Memory Integration**:
-- Persistent context across sessions
-- Semantic search for relevant history
-- Automatic compression and retrieval
-1. **AWS Bedrock Integration**:
+
+3. **AWS Bedrock Integration**:
 - Enterprise-grade security
 - Consistent Claude Sonnet performance
 - Cost-effective scaling
-1. **Production Readiness**:
+
+4. **Production Readiness**:
 - Structured state management
 - Error recovery mechanisms
 - Memory optimization
@@ -424,9 +560,16 @@ result = graph.invoke(initial_state)
 
 ## Recommended Pattern
 
-**Use Pattern 3 (Sequential Reliable) for most applications**, upgrading to Pattern 4 (Sequential Compressed) when dealing with:
+**Use Pattern 3 Enhanced (Sequential Reliable with Advanced Memory)** for most applications**, upgrading to **Pattern 4 Enhanced (Sequential Compressed with Advanced Memory)** when dealing with:
 
 - Long-running tasks (>10 steps)
 - Complex multi-turn conversations
 - Memory-intensive workflows
 - Production deployments requiring cost optimization
+- Applications requiring knowledge retention and pattern recognition
+
+The enhanced patterns provide significant improvements in:
+- **Context retention**: Episodic memory preserves specific experiences
+- **Knowledge consolidation**: Semantic memory builds abstract understanding
+- **Efficiency**: Intelligent compression reduces token usage
+- **Scalability**: Background processing handles memory management overhead
