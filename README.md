@@ -89,14 +89,21 @@ print(f"Reliability: {info['reliability']}")
 
 ### Examples
 
-Run the provided examples:
+Run the provided examples to see different patterns in action:
 
 ```bash
-# Basic usage example
-python examples/basic_usage.py
+# Individual pattern demonstrations
+python examples/pattern1_parallel_unreliable.py      # Shows problems with isolated agents
+python examples/pattern2_parallel_shared.py          # Shows issues with shared memory in parallel
+python examples/pattern3_sequential_reliable.py      # Shows benefits of full coordination
+python examples/pattern4_sequential_compressed.py    # Shows memory optimization for long tasks
 
-# Memory persistence example
-python examples/with_memory_persistence.py
+# Compare all patterns side by side
+python examples/compare_all_patterns.py              # Comprehensive comparison
+
+# Legacy examples (still available)
+python examples/basic_usage.py                       # Basic usage with the unified API
+python examples/with_memory_persistence.py           # Memory persistence example
 ```
 
 ## Pattern Comparison
