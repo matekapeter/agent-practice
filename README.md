@@ -92,7 +92,11 @@ print(f"Reliability: {info['reliability']}")
 Run the provided examples to see different patterns in action:
 
 ```bash
-# Individual pattern demonstrations
+# Enhanced memory management examples (recommended)
+python examples/pattern3_sequential_reliable_enhanced.py    # Sequential with episodic/semantic memory
+python examples/pattern4_sequential_compressed_enhanced.py  # Sequential with compression + hot/background updates
+
+# Basic pattern demonstrations
 python examples/pattern1_parallel_unreliable.py      # Shows problems with isolated agents
 python examples/pattern2_parallel_shared.py          # Shows issues with shared memory in parallel
 python examples/pattern3_sequential_reliable.py      # Shows benefits of full coordination
