@@ -1,0 +1,343 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Business Operations API",
+    "description": "API for business operations including user management, product search, orders, and appointments",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/get_user_profile": {
+      "post": {
+        "summary": "Get user profile information",
+        "description": "Retrieve detailed user profile information including preferences and subscription details",
+        "operationId": "get_user_profile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the user"
+                  }
+                },
+                "required": ["user_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "profile": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "preferences": {
+                          "type": "object"
+                        },
+                        "subscription_tier": {
+                          "type": "string"
+                        },
+                        "member_since": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update_user_preferences": {
+      "post": {
+        "summary": "Update user preferences",
+        "description": "Update user preferences such as communication settings, language, and timezone",
+        "operationId": "update_user_preferences",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the user"
+                  },
+                  "preferences": {
+                    "type": "object",
+                    "description": "User preferences to update",
+                    "properties": {
+                      "communication": {
+                        "type": "string",
+                        "enum": ["email", "sms", "phone"]
+                      },
+                      "language": {
+                        "type": "string"
+                      },
+                      "timezone": {
+                        "type": "string"
+                      },
+                      "notifications": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "required": ["user_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferences updated successfully"
+          }
+        }
+      }
+    },
+    "/search_products": {
+      "post": {
+        "summary": "Search for products",
+        "description": "Search for products based on criteria like query, category, and price range",
+        "operationId": "search_products",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Search query for product name or description"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "Product category filter",
+                    "enum": ["all", "electronics", "sports", "clothing", "books", "home"]
+                  },
+                  "max_price": {
+                    "type": "number",
+                    "description": "Maximum price filter"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Products found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "number"
+                          },
+                          "rating": {
+                            "type": "number"
+                          },
+                          "in_stock": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "total_found": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_order_status": {
+      "post": {
+        "summary": "Get order status",
+        "description": "Retrieve the current status and details of an order",
+        "operationId": "get_order_status",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the order"
+                  }
+                },
+                "required": ["order_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "order": {
+                      "type": "object",
+                      "properties": {
+                        "order_id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["processing", "shipped", "delivered", "cancelled"]
+                        },
+                        "tracking_number": {
+                          "type": "string"
+                        },
+                        "estimated_delivery": {
+                          "type": "string"
+                        },
+                        "items": {
+                          "type": "array"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule_appointment": {
+      "post": {
+        "summary": "Schedule an appointment",
+        "description": "Schedule a new appointment for a user with specified service type and preferred time",
+        "operationId": "schedule_appointment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the user"
+                  },
+                  "service_type": {
+                    "type": "string",
+                    "description": "Type of service for the appointment",
+                    "enum": ["consultation", "support", "maintenance", "training"]
+                  },
+                  "preferred_date": {
+                    "type": "string",
+                    "description": "Preferred date for the appointment (YYYY-MM-DD format)"
+                  },
+                  "preferred_time": {
+                    "type": "string",
+                    "description": "Preferred time for the appointment (HH:MM AM/PM format)"
+                  }
+                },
+                "required": ["user_id", "service_type", "preferred_date"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment scheduled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "appointment": {
+                      "type": "object",
+                      "properties": {
+                        "appointment_id": {
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "string"
+                        },
+                        "service_type": {
+                          "type": "string"
+                        },
+                        "scheduled_date": {
+                          "type": "string"
+                        },
+                        "scheduled_time": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
