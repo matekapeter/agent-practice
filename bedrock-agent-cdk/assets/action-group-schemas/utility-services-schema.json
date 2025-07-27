@@ -1,0 +1,258 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Utility Services API",
+    "description": "API for utility services including notifications, weather information, and pricing calculations",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/send_notification": {
+      "post": {
+        "summary": "Send a notification",
+        "description": "Send a notification to a user via their preferred communication method",
+        "operationId": "send_notification",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Unique identifier for the user"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Message content to send to the user"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Type of notification",
+                    "enum": ["email", "sms", "push", "in-app"],
+                    "default": "email"
+                  }
+                },
+                "required": ["user_id", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notification sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "notification": {
+                      "type": "object",
+                      "properties": {
+                        "notification_id": {
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "sent_at": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/get_weather_info": {
+      "post": {
+        "summary": "Get weather information",
+        "description": "Retrieve current weather information and forecast for a specified location",
+        "operationId": "get_weather_info",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string",
+                    "description": "Location for weather information (city, state, country, or coordinates)"
+                  }
+                },
+                "required": ["location"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weather information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "weather": {
+                      "type": "object",
+                      "properties": {
+                        "location": {
+                          "type": "string"
+                        },
+                        "current": {
+                          "type": "object",
+                          "properties": {
+                            "temperature": {
+                              "type": "number"
+                            },
+                            "condition": {
+                              "type": "string"
+                            },
+                            "humidity": {
+                              "type": "number"
+                            },
+                            "wind_speed": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "forecast": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "day": {
+                                "type": "string"
+                              },
+                              "high": {
+                                "type": "number"
+                              },
+                              "low": {
+                                "type": "number"
+                              },
+                              "condition": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "last_updated": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate_pricing": {
+      "post": {
+        "summary": "Calculate pricing",
+        "description": "Calculate total pricing for a service or product including discounts, taxes, and fees",
+        "operationId": "calculate_pricing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "base_price": {
+                    "type": "number",
+                    "description": "Base price of the item or service"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "Quantity of items",
+                    "default": 1
+                  },
+                  "discount_code": {
+                    "type": "string",
+                    "description": "Discount code to apply"
+                  },
+                  "user_tier": {
+                    "type": "string",
+                    "description": "User subscription tier for tier-based discounts",
+                    "enum": ["basic", "premium", "enterprise"],
+                    "default": "basic"
+                  }
+                },
+                "required": ["base_price"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pricing calculated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "pricing": {
+                      "type": "object",
+                      "properties": {
+                        "base_price": {
+                          "type": "number"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        },
+                        "subtotal": {
+                          "type": "number"
+                        },
+                        "discount_applied": {
+                          "type": "number"
+                        },
+                        "discount_amount": {
+                          "type": "number"
+                        },
+                        "tax_rate": {
+                          "type": "number"
+                        },
+                        "tax_amount": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
